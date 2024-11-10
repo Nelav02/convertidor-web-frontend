@@ -27,7 +27,11 @@ import { CopiarContenidoIcon } from "../assets/CopiarContenidoIcon";
 import { EliminarDocumentoIcon } from "../assets/EliminarDocumentoIcon";
 import { MenuIcon } from "../assets/MenuIcon";
 import { DBIcon } from "../assets/DBIcon";
-import { enviarXML } from "../api/IndividualAPI";
+import {
+  convertirXMLaJSON,
+  enviarXML,
+  guardarJSONenMongoDB,
+} from "../api/IndividualAPI";
 
 export default function EditorIndividual() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -55,8 +59,11 @@ export default function EditorIndividual() {
   const [xmlCode, setXmlCode] = useState(defaultXmlCode);
   const [jsonCode, setJsonCode] = useState(defaultJsonCode);
   const [fileName, setFileName] = useState("");
-  const [status, setStatus] = useState("");
-  const [message, setMessage] = useState("");
+  const [statusXML, setStatusXML] = useState("");
+  const [messageXML, setMessageXML] = useState("");
+  const [statusJSON, setStatusJSON] = useState("");
+  const [messageJSON, setMessageJSON] = useState("");
+  //const [jsonData, setJsonData] = useState("");
 
   const handleFileUpload = () => {
     const fileInput = document.createElement("input");
@@ -76,24 +83,61 @@ export default function EditorIndividual() {
           if (response.status.toLowerCase() === "valid") {
             setXmlCode(response.XMLformateado);
             setFileName(response.fileName);
-            setStatus(response.status);
-            setMessage(response.message);
+            setStatusXML(response.status);
+            setMessageXML(response.message);
           }
         } catch (error) {
           if (error.response && error.response.data) {
             setXmlCode("");
+            setJsonCode("");
             setFileName(error.response.data.fileName);
-            setStatus(error.response.data.status);
-            setMessage(error.response.data.message);
+            setStatusXML(error.response.data.status);
+            setMessageXML(error.response.data.message);
           } else {
-            setStatus("");
-            setMessage("");
+            setStatusXML("");
+            setMessageXML("");
             console.log("Error al formatear el XML: ", error);
           }
         }
       }
     };
     fileInput.click();
+  };
+
+  const handleConvertToJson = async () => {
+    try {
+      const response = await convertirXMLaJSON(
+        new File([xmlCode], { type: "text/xml" }),
+        fileName
+      );
+
+      if (response.status.toLowerCase() === "valid") {
+        setJsonCode(JSON.stringify(response.jsonData, null, 2));
+        setFileName(response.fileName);
+        setStatusJSON(response.status);
+        setMessageJSON(response.message);
+      }
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setJsonCode("");
+        setFileName(error.response.data.fileName);
+        setStatusJSON(error.response.data.status);
+        setMessageJSON(error.response.data.message);
+      } else {
+        setStatusJSON("");
+        setMessageJSON("");
+        console.log("Error al convertir el XML a JSON: ", error);
+      }
+    }
+  };
+
+  const handleGuardarJSONenMongoDB = async () => {
+    try {
+      const response = await guardarJSONenMongoDB(jsonCode);
+      console.log("JSON guardado en MongoDB: ", response.message);
+    } catch (error) {
+      console.log("Error al guardar el JSON en MongoDB: ", error);
+    }
   };
 
   return (
@@ -127,6 +171,7 @@ export default function EditorIndividual() {
               size="sm"
               variant="flat"
               radius="sm"
+              onClick={handleConvertToJson}
               endContent={<ConvertirIcon className="h-auto w-4" />}
             >
               Convertir a Json
@@ -204,17 +249,23 @@ export default function EditorIndividual() {
           <Textarea
             isReadOnly
             label={
-              status
-                ? status.toLowerCase() === "invalid"
-                  ? `${status.toUpperCase()} (${fileName})`
-                  : status.toUpperCase()
+              statusXML
+                ? statusXML.toLowerCase() === "invalid"
+                  ? `${statusXML.toUpperCase()} (${fileName})`
+                  : statusXML.toUpperCase()
                 : "Mensaje"
             }
             value={
-              message ? message : "Mensaje de validación del archivo XML actual"
+              messageXML
+                ? messageXML
+                : "Mensaje de validación del archivo XML actual"
             }
             color={
-              status ? (status === "invalid" ? "danger" : "success") : "default"
+              statusXML
+                ? statusXML === "invalid"
+                  ? "danger"
+                  : "success"
+                : "default"
             }
             labelPlacement="inside"
             size="lg"
@@ -298,7 +349,9 @@ export default function EditorIndividual() {
                         variant="flat"
                         radius="sm"
                         className="text-white text-base bg-blue-950"
-                        onPress={onClose}
+                        onPress={() => {
+                          handleGuardarJSONenMongoDB(), onClose();
+                        }}
                         endContent={<DBIcon className="h-auto w-4" />}
                       >
                         Guardar en MongoDB
@@ -369,9 +422,25 @@ export default function EditorIndividual() {
         <CardFooter>
           <Textarea
             isReadOnly
-            label="Mensaje"
-            value="Mensaje de validación del archivo JSON actual"
-            color="dafault"
+            label={
+              statusJSON
+                ? statusJSON.toLowerCase() === "invalid"
+                  ? `${statusJSON.toUpperCase()} (${fileName})`
+                  : statusJSON.toUpperCase()
+                : "Mensaje"
+            }
+            value={
+              messageJSON
+                ? messageJSON
+                : "Mensaje de validación del archivo JSON actual"
+            }
+            color={
+              statusJSON
+                ? statusJSON === "invalid"
+                  ? "danger"
+                  : "success"
+                : "default"
+            }
             labelPlacement="inside"
             size="lg"
             radius="sm"
