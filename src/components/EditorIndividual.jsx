@@ -27,6 +27,7 @@ import { CopiarContenidoIcon } from "../assets/CopiarContenidoIcon";
 import { EliminarDocumentoIcon } from "../assets/EliminarDocumentoIcon";
 import { MenuIcon } from "../assets/MenuIcon";
 import { DBIcon } from "../assets/DBIcon";
+import { enviarXML } from "../api/IndividualAPI";
 
 export default function EditorIndividual() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -53,25 +54,70 @@ export default function EditorIndividual() {
 
   const [xmlCode, setXmlCode] = useState(defaultXmlCode);
   const [jsonCode, setJsonCode] = useState(defaultJsonCode);
+  const [fileName, setFileName] = useState("");
+  const [status, setStatus] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleFileUpload = () => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".xml,.DATA";
+    fileInput.onchange = async (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`El archivo es demasiado grande. ${file.size} bytes`);
+          return;
+        }
+
+        try {
+          const response = await enviarXML(file);
+
+          if (response.status.toLowerCase() === "valid") {
+            setXmlCode(response.XMLformateado);
+            setFileName(response.fileName);
+            setStatus(response.status);
+            setMessage(response.message);
+          }
+        } catch (error) {
+          if (error.response && error.response.data) {
+            setXmlCode("");
+            setFileName(error.response.data.fileName);
+            setStatus(error.response.data.status);
+            setMessage(error.response.data.message);
+          } else {
+            setStatus("");
+            setMessage("");
+            console.log("Error al formatear el XML: ", error);
+          }
+        }
+      }
+    };
+    fileInput.click();
+  };
 
   return (
     <div className="grid grid-cols-2 gap-5">
       <Card className="pt-2 pb-0 bg-background/25">
         <CardHeader className="justify-between py-1">
           <div className="flex gap-5">
-            <span className="rounded-md bg-blue-500/20 px-2 py-0.5 text-xl font-bold text-blue-400">
+            <span
+              className="rounded-md bg-blue-500/20 px-2 py-0.5 text-xl font-bold text-blue-400 cursor-pointer"
+              onClick={handleFileUpload}
+            >
               XML Editor
             </span>
-
-            <Chip
-              className="text-white"
-              size="lg"
-              color="default"
-              variant="bordered"
-              startContent={<CheckIcon size={25} />}
-            >
-              PRD.FML.OB234.SRE.1.230720.DATA
-            </Chip>
+            {fileName && (
+              <Chip
+                className="text-white"
+                size="lg"
+                color="default"
+                variant="bordered"
+                startContent={<CheckIcon size={24} />}
+              >
+                {fileName}
+              </Chip>
+            )}
           </div>
           <div className="flex gap-2">
             <Button
@@ -154,12 +200,35 @@ export default function EditorIndividual() {
             />
           </div>
         </CardBody>
-        <CardFooter>
+        <CardFooter className="">
           <Textarea
             isReadOnly
-            color="success"
+            label={
+              status
+                ? status.toLowerCase() === "invalid"
+                  ? `${status.toUpperCase()} (${fileName})`
+                  : status.toUpperCase()
+                : "Mensaje"
+            }
+            value={
+              message ? message : "Mensaje de validación del archivo XML actual"
+            }
+            color={
+              status ? (status === "invalid" ? "danger" : "success") : "default"
+            }
             labelPlacement="inside"
-            defaultValue="ERROR: NextUI is a React UI library that provides a set of accessible, reusable, and beautiful components aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+            size="lg"
+            radius="sm"
+            maxRows={1}
+            classNames={{
+              base: "",
+              label: "font-bold text-lg py-0",
+              inputWrapper: "",
+              innerWrapper: "py-0",
+              input: "",
+              description: "",
+              errorMessage: "",
+            }}
           />
         </CardFooter>
       </Card>
@@ -300,9 +369,22 @@ export default function EditorIndividual() {
         <CardFooter>
           <Textarea
             isReadOnly
-            color="danger"
+            label="Mensaje"
+            value="Mensaje de validación del archivo JSON actual"
+            color="dafault"
             labelPlacement="inside"
-            defaultValue="ERROR: NextUI is a React UI library that provides a set of accessible, reusable, and beautiful components aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+            size="lg"
+            radius="sm"
+            maxRows={1}
+            classNames={{
+              base: "",
+              label: "font-bold text-lg py-0",
+              inputWrapper: "",
+              innerWrapper: "py-0",
+              input: "",
+              description: "",
+              errorMessage: "",
+            }}
           ></Textarea>
         </CardFooter>
       </Card>
