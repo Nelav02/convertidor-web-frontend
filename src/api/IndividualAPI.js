@@ -86,3 +86,28 @@ export const guardarJSONenMongoDB = async (jsonData) => {
     throw error;
   }
 };
+
+export const validarXML = async (file) => {
+  if (!file) {
+    console.log("No se ha seleccionado un archivo para validar.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post(`${API_URL}/validarXML/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error al validar el archivo XML: ",
+      error.response ? error.response.data : error.message
+    );
+    throw error;
+  }
+};

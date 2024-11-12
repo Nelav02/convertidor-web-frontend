@@ -31,6 +31,7 @@ import {
   convertirXMLaJSON,
   enviarXML,
   guardarJSONenMongoDB,
+  validarXML,
 } from "../api/IndividualAPI";
 import { toast, Toaster } from "sonner";
 
@@ -132,6 +133,27 @@ export default function EditorIndividual() {
         setStatusJSON("");
         setMessageJSON("");
         console.log("Error al convertir el XML a JSON: ", error);
+      }
+      throw error;
+    }
+  };
+
+  const handleValidateXML = async () => {
+    try {
+      const response = await validarXML(
+        new File([xmlCode], { type: "text/xml" })
+      );
+
+      if (response.status.toLowerCase() === "valid") {
+        setStatusXML(response.status);
+        setMessageXML(response.message);
+      } else {
+        throw new Error("El estado del XML no es valido.");
+      }
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setStatusXML(error.response.data.status);
+        setMessageXML(error.response.data.message);
       }
       throw error;
     }
@@ -256,6 +278,13 @@ export default function EditorIndividual() {
                   showDivider
                   description="Validar el archivo actual"
                   startContent={<CheckIcon className={iconClasses} />}
+                  onPress={() => {
+                    toast.promise(handleValidateXML(xmlCode), {
+                      error: "Error al validar el XML",
+                      success: "XML validado exitosamente",
+                      loading: "Validando archivo ...",
+                    });
+                  }}
                 >
                   Validar XML
                 </DropdownItem>
