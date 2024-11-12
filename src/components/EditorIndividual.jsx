@@ -32,6 +32,7 @@ import {
   enviarXML,
   guardarJSONenMongoDB,
 } from "../api/IndividualAPI";
+import { toast, Toaster } from "sonner";
 
 export default function EditorIndividual() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -106,6 +107,8 @@ export default function EditorIndividual() {
 
   const handleConvertToJson = async () => {
     try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       const response = await convertirXMLaJSON(
         new File([xmlCode], { type: "text/xml" }),
         fileName
@@ -116,6 +119,8 @@ export default function EditorIndividual() {
         setFileName(response.fileName);
         setStatusJSON(response.status);
         setMessageJSON(response.message);
+      } else {
+        throw new Error("El estado del XML no es valido.");
       }
     } catch (error) {
       if (error.response && error.response.data) {
@@ -128,17 +133,44 @@ export default function EditorIndividual() {
         setMessageJSON("");
         console.log("Error al convertir el XML a JSON: ", error);
       }
+      throw error;
     }
   };
 
   const handleGuardarJSONenMongoDB = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const response = await guardarJSONenMongoDB(jsonCode);
       console.log("JSON guardado en MongoDB: ", response.message);
     } catch (error) {
       console.log("Error al guardar el JSON en MongoDB: ", error);
+      throw error;
     }
   };
+
+  function deleteContent() {
+    try {
+      setXmlCode("");
+      setJsonCode("");
+      setFileName("");
+      setStatusXML("");
+      setMessageXML("");
+      setStatusJSON("");
+      setMessageJSON("");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   return (
     <div className="grid grid-cols-2 gap-5">
@@ -171,7 +203,13 @@ export default function EditorIndividual() {
               size="sm"
               variant="flat"
               radius="sm"
-              onClick={handleConvertToJson}
+              onClick={() => {
+                toast.promise(handleConvertToJson, {
+                  error: "Error al convertir el XML a JSON",
+                  success: "XML convertido exitosamente a JSON",
+                  loading: "Convirtiendo archivo ...",
+                });
+              }}
               endContent={<ConvertirIcon className="h-auto w-4" />}
             >
               Convertir a Json
@@ -185,6 +223,7 @@ export default function EditorIndividual() {
               <DropdownMenu variant="flat" aria-label="Menu de opciones">
                 <DropdownItem
                   key="nuevo"
+                  onPress={handleFileUpload}
                   description="Carga un nuevo archivo XML"
                   startContent={
                     <AgregarArchivoIcon
@@ -198,6 +237,17 @@ export default function EditorIndividual() {
                   key="copiar"
                   description="Copia todo el contenido XML"
                   startContent={<CopiarContenidoIcon className={iconClasses} />}
+                  onPress={() => {
+                    if (copyToClipboard(xmlCode)) {
+                      toast.success("Contenido copiado.", {
+                        duration: 1500,
+                      });
+                    } else {
+                      toast.error("No se pudo copiar el contenido.", {
+                        duration: 1500,
+                      });
+                    }
+                  }}
                 >
                   Copiar contenido
                 </DropdownItem>
@@ -219,6 +269,17 @@ export default function EditorIndividual() {
                       className={cn(iconClasses, "text-danger")}
                     />
                   }
+                  onPress={() => {
+                    if (deleteContent()) {
+                      toast.error("Contenido eliminado.", {
+                        duration: 1500,
+                      });
+                    } else {
+                      toast.error("No se pudo eliminar el contenido.", {
+                        duration: 1500,
+                      });
+                    }
+                  }}
                 >
                   Limpiar contenido
                 </DropdownItem>
@@ -299,7 +360,13 @@ export default function EditorIndividual() {
               size="sm"
               variant="flat"
               radius="sm"
-              onPress={onOpen}
+              onPress={() => {
+                if (jsonCode != "") {
+                  onOpen();
+                } else {
+                  toast.error("No hay datos JSON para guardar.");
+                }
+              }}
               endContent={<DBIcon className="h-auto w-4" />}
             >
               Guardar en DB
@@ -350,7 +417,20 @@ export default function EditorIndividual() {
                         radius="sm"
                         className="text-white text-base bg-blue-950"
                         onPress={() => {
-                          handleGuardarJSONenMongoDB(), onClose();
+                          toast.promise(
+                            handleGuardarJSONenMongoDB().then((success) => {
+                              if (success) {
+                                onClose();
+                              } else {
+                                onClose();
+                              }
+                            }),
+                            {
+                              error: "Error al guardar el JSON en MongoDB",
+                              success: "JSON guardado en MongoDB",
+                              loading: "Guardando JSON en MongoDB ...",
+                            }
+                          );
                         }}
                         endContent={<DBIcon className="h-auto w-4" />}
                       >
@@ -372,6 +452,17 @@ export default function EditorIndividual() {
                   key="copiar"
                   description="Copia todo el contenido JSON"
                   startContent={<CopiarContenidoIcon className={iconClasses} />}
+                  onPress={() => {
+                    if (copyToClipboard(jsonCode)) {
+                      toast.success("Contenido copiado.", {
+                        duration: 1500,
+                      });
+                    } else {
+                      toast.error("No se pudo copiar el contenido.", {
+                        duration: 1500,
+                      });
+                    }
+                  }}
                 >
                   Copiar contenido
                 </DropdownItem>
@@ -393,6 +484,17 @@ export default function EditorIndividual() {
                       className={cn(iconClasses, "text-danger")}
                     />
                   }
+                  onPress={() => {
+                    if (deleteContent()) {
+                      toast.error("Contenido eliminado.", {
+                        duration: 1500,
+                      });
+                    } else {
+                      toast.error("No se pudo eliminar el contenido.", {
+                        duration: 1500,
+                      });
+                    }
+                  }}
                 >
                   Limpiar contenido
                 </DropdownItem>
@@ -457,6 +559,14 @@ export default function EditorIndividual() {
           ></Textarea>
         </CardFooter>
       </Card>
+
+      <Toaster
+        richColors
+        position="bottom-center"
+        expand={true}
+        theme="dark"
+        visibleToasts={3}
+      />
     </div>
   );
 }
