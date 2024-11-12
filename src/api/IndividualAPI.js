@@ -111,3 +111,32 @@ export const validarXML = async (file) => {
     throw error;
   }
 };
+
+export const validarJSON = async (jsonData) => {
+  if (!jsonData) {
+    console.log("El JSON debe ser un objeto válido para validar.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append(
+    "json_file",
+    new Blob([JSON.stringify(jsonData)], { type: "application/json" }),
+    "data.json"
+  );
+
+  try {
+    const response = await axios.post(`${API_URL}/validarJSON/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error al validar el archivo JSON: ",
+      error.response ? error.response.data : error.message
+    );
+    throw error;
+  }
+};

@@ -31,6 +31,7 @@ import {
   convertirXMLaJSON,
   enviarXML,
   guardarJSONenMongoDB,
+  validarJSON,
   validarXML,
 } from "../api/IndividualAPI";
 import { toast, Toaster } from "sonner";
@@ -159,6 +160,25 @@ export default function EditorIndividual() {
     }
   };
 
+  const handleValidateJSON = async () => {
+    try {
+      const response = await validarJSON(jsonCode);
+
+      if (response.status.toLowerCase() === "valid") {
+        setStatusJSON(response.status);
+        setMessageJSON(response.message);
+      } else {
+        throw new Error("El estado del JSON no es valido.");
+      }
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setStatusJSON(error.response.data.status);
+        setMessageJSON(error.response.data.message);
+      }
+      throw error;
+    }
+  };
+
   const handleGuardarJSONenMongoDB = async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
@@ -200,7 +220,7 @@ export default function EditorIndividual() {
         <CardHeader className="justify-between py-1">
           <div className="flex gap-5">
             <span
-              className="rounded-md bg-blue-500/20 px-2 py-0.5 text-xl font-bold text-blue-400 cursor-pointer"
+              className="rounded-md bg-blue-500/20 px-2 py-0.5 text-xl font-bold text-blue-400 cursor-pointer hover:bg-blue-900 active:bg-blue-700 active:scale-95 transition-transform duration-100"
               onClick={handleFileUpload}
             >
               XML Editor
@@ -226,11 +246,15 @@ export default function EditorIndividual() {
               variant="flat"
               radius="sm"
               onClick={() => {
-                toast.promise(handleConvertToJson, {
-                  error: "Error al convertir el XML a JSON",
-                  success: "XML convertido exitosamente a JSON",
-                  loading: "Convirtiendo archivo ...",
-                });
+                if (fileName && xmlCode) {
+                  toast.promise(handleConvertToJson, {
+                    error: "Error al convertir el XML a JSON",
+                    success: "XML convertido exitosamente a JSON",
+                    loading: "Convirtiendo archivo ...",
+                  });
+                } else {
+                  toast.error("No se ha subido un archivo.");
+                }
               }}
               endContent={<ConvertirIcon className="h-auto w-4" />}
             >
@@ -279,11 +303,15 @@ export default function EditorIndividual() {
                   description="Validar el archivo actual"
                   startContent={<CheckIcon className={iconClasses} />}
                   onPress={() => {
-                    toast.promise(handleValidateXML(xmlCode), {
-                      error: "Error al validar el XML",
-                      success: "XML validado exitosamente",
-                      loading: "Validando archivo ...",
-                    });
+                    if (fileName) {
+                      toast.promise(handleValidateXML, {
+                        error: "Error al validar el XML",
+                        success: "XML validado exitosamente",
+                        loading: "Validando archivo ...",
+                      });
+                    } else {
+                      toast.error("No se ha subido un archivo.");
+                    }
                   }}
                 >
                   Validar XML
@@ -377,7 +405,7 @@ export default function EditorIndividual() {
       <Card className="pt-2 pb-0 bg-background/25">
         <CardHeader className="justify-between py-1">
           <div className="grid grid-cols1 gap-3">
-            <span className="rounded-md bg-green-500/20 px-2 py-0.5 text-xl font-bold text-green-400">
+            <span className="rounded-md bg-green-500/20 px-2 py-0.5 text-xl font-bold text-green-400 hover:bg-green-900">
               JSON Editor
             </span>
           </div>
@@ -390,10 +418,12 @@ export default function EditorIndividual() {
               variant="flat"
               radius="sm"
               onPress={() => {
-                if (jsonCode != "") {
+                if (jsonCode && statusJSON.toLowerCase() === "valid") {
                   onOpen();
                 } else {
-                  toast.error("No hay datos JSON para guardar.");
+                  toast.error("No hay datos JSON para guardar.", {
+                    description: "Vuelve a validar el archivo JSON.",
+                  });
                 }
               }}
               endContent={<DBIcon className="h-auto w-4" />}
@@ -500,6 +530,17 @@ export default function EditorIndividual() {
                   showDivider
                   description="Validar el archivo actual"
                   startContent={<CheckIcon className={iconClasses} />}
+                  onPress={() => {
+                    if (fileName && jsonCode) {
+                      toast.promise(handleValidateJSON(), {
+                        error: "Error al validar el JSON",
+                        success: "JSON validado exitosamente",
+                        loading: "Validando archivo ...",
+                      });
+                    } else {
+                      toast.error("No se ha subido un archivo.");
+                    }
+                  }}
                 >
                   Validar JSON
                 </DropdownItem>
