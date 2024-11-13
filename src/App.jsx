@@ -6,6 +6,7 @@ import EditorIndividual from "./components/EditorIndividual";
 import { Automatizacion_logo } from "./assets/Automatizacion";
 import { Paso_a_paso_logo } from "./assets/Paso_a_paso_logo";
 import { Individual_logo } from "./assets/Individual_logo";
+import PasoAPaso from "./components/PasoAPaso";
 
 function App() {
   return (
@@ -54,12 +55,17 @@ function App() {
             >
               <Card>
                 <CardBody>
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris nisi ut aliquip ex ea commodo consequat. Duis aute
-                  irure dolor in reprehenderit in voluptate velit esse cillum
-                  dolore eu fugiat nulla pariatur.
+                  Excepteur sint occaecat cupidatat non proident, sunt in culpa
+                  qui officia deserunt mollit anim id est laborum.
                 </CardBody>
               </Card>
+              {/*<div className="px-80 justify-center">
+                <Card fullWidth={true}>
+                  <CardBody>
+                    <PasoAPaso />
+                  </CardBody>
+                </Card>
+              </div>*/}
             </Tab>
             <Tab
               key={3}

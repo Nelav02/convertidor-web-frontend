@@ -185,6 +185,10 @@ export default function EditorIndividual() {
       const response = await guardarJSONenMongoDB(jsonCode);
       console.log("JSON guardado en MongoDB: ", response.message);
     } catch (error) {
+      if (error.response && error.response.data) {
+        setMessageJSON(error.response.data.message);
+        setStatusJSON(error.response.data.status);
+      }
       console.log("Error al guardar el JSON en MongoDB: ", error);
       throw error;
     }
@@ -253,7 +257,9 @@ export default function EditorIndividual() {
                     loading: "Convirtiendo archivo ...",
                   });
                 } else {
-                  toast.error("No se ha subido un archivo.");
+                  toast.error("No se ha subido un archivo.", {
+                    description: "O vuelve a validar el archivo XML.",
+                  });
                 }
               }}
               endContent={<ConvertirIcon className="h-auto w-4" />}
@@ -422,7 +428,7 @@ export default function EditorIndividual() {
                   onOpen();
                 } else {
                   toast.error("No hay datos JSON para guardar.", {
-                    description: "Vuelve a validar el archivo JSON.",
+                    description: "O vuelve a validar el archivo JSON.",
                   });
                 }
               }}
@@ -485,7 +491,9 @@ export default function EditorIndividual() {
                               }
                             }),
                             {
-                              error: "Error al guardar el JSON en MongoDB",
+                              error: (data) => {
+                                return `${data.response.data.message}`;
+                              },
                               success: "JSON guardado en MongoDB",
                               loading: "Guardando JSON en MongoDB ...",
                             }
