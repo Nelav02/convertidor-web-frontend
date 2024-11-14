@@ -53,19 +53,9 @@ function App() {
                 </div>
               }
             >
-              <Card>
-                <CardBody>
-                  Excepteur sint occaecat cupidatat non proident, sunt in culpa
-                  qui officia deserunt mollit anim id est laborum.
-                </CardBody>
-              </Card>
-              {/*<div className="px-80 justify-center">
-                <Card fullWidth={true}>
-                  <CardBody>
-                    <PasoAPaso />
-                  </CardBody>
-                </Card>
-              </div>*/}
+              <div className="px-80">
+                <PasoAPaso />
+              </div>
             </Tab>
             <Tab
               key={3}
