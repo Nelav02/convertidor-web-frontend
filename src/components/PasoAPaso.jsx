@@ -31,6 +31,10 @@ import { DBIcon } from "../assets/DBIcon";
 import { MenuIcon } from "../assets/MenuIcon";
 import { InfoIcon } from "../assets/InfoIcon";
 import { EliminarDocumentoIcon } from "../assets/EliminarDocumentoIcon";
+import { processarTAR } from "../api/IndividualAPI";
+import { AgregarArchivoIcon } from "../assets/AgregarArchivoIcon";
+import { ArchivoIcon } from "../assets/ArchivoIcon";
+import { NotificacionIcon } from "../assets/NotificacionIcon";
 
 const statusColorMap = {
   active: "success",
@@ -39,74 +43,119 @@ const statusColorMap = {
 };
 
 export default function PasoAPaso() {
+  const [extractedFiles, setExtractedFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const iconClasses =
     "text-xl text-default-500 pointer-events-none flex-shrink-0";
 
   const [page, setPage] = useState(1);
   const rowsPerPage = 11;
 
-  const pages = Math.ceil(users.length / rowsPerPage);
+  const pages = Math.ceil(extractedFiles.length / rowsPerPage);
 
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
 
-    return users.slice(start, end);
-  }, [page]);
+    return extractedFiles.slice(start, end);
+  }, [page, extractedFiles]);
 
   const renderCell = React.useCallback((user, columnKey) => {
     const cellValue = user[columnKey];
+    console.log("USER:", user);
+    console.log("COLUMN KEY:", columnKey);
+    console.log("CELL VALUE:", cellValue);
 
     switch (columnKey) {
-      case "name":
+      case "id":
         return (
-          <User
-            avatarProps={{ radius: "lg", src: user.avatar }}
-            description={user.email}
-            name={cellValue}
-          >
-            {user.email}
-          </User>
+          <span className="font-bold text-sm text-default-500">{user.id}</span>
         );
 
-      case "role":
+      case "nombre":
+        return (
+          <div className="flex items-center gap-2">
+            <ArchivoIcon className="h-auto w-10" />
+            <div className="flex flex-col">
+              <span className="font-bold text-sm text-default-500">
+                {user.filename}
+              </span>
+              <Chip
+                endContent={
+                  user.type == "text/plain" ? (
+                    <NotificacionIcon size={13} />
+                  ) : (
+                    <CheckIcon size={13} />
+                  )
+                }
+                color={user.type == "text/plain" ? "primary" : "warning"}
+                variant="flat"
+                size="sm"
+              >
+                {user.type}
+              </Chip>
+            </div>
+          </div>
+        );
+
+      case "creacion":
         return (
           <div className="flex flex-col">
-            <p className="text-bold text-sm capitalize">{cellValue}</p>
-            <p className="text-bold text-sm capitalize text-default-400">
-              {user.team}
+            <p className="text-bold text-sm capitalize text-default-500">
+              {user.mtime}
             </p>
           </div>
         );
-      case "status":
+      case "tamanio":
         return (
           <Chip
             className="capitalize"
-            color={statusColorMap[user.status]}
+            color={
+              user.size <= 1000000
+                ? "success"
+                : user.size < 5000000
+                ? "warning"
+                : "danger"
+            }
             size="sm"
             variant="flat"
           >
-            {cellValue}
+            {user.size / 1000} KB
           </Chip>
         );
-      case "actions":
+      case "tipo":
+        return (
+          <Chip
+            className="capitalize"
+            color="secondary"
+            size="sm"
+            variant="flat"
+          >
+            Complementario
+          </Chip>
+        );
+      case "opciones":
         return (
           <div className="relative flex items-center gap-2">
-            <Tooltip content="Details">
-              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EyeIcon />
-              </span>
-            </Tooltip>
-            <Tooltip content="Edit user">
-              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon />
-              </span>
-            </Tooltip>
-            <Tooltip content="Delete user" color="danger">
-              <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                <DeleteIcon />
-              </span>
-            </Tooltip>
+            <Button
+              isIconOnly
+              color="default"
+              aria-label="Editar"
+              size="sm"
+              variant="light"
+            >
+              <EditIcon className="h-auto w-4" />
+            </Button>
+            <Button
+              isIconOnly
+              color="danger"
+              aria-label="Editar"
+              size="sm"
+              variant="solid"
+            >
+              <DeleteIcon className="h-auto w-4" />
+            </Button>
           </div>
         );
       default:
@@ -114,11 +163,39 @@ export default function PasoAPaso() {
     }
   }, []);
 
+  const handleFileUpload = () => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".tar.gz";
+    fileInput.onchange = async (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        if (file.size > 50 * 1024 * 1024) {
+          alert(`El archivo es demasiado grande. ${file.size} bytes`);
+          return;
+        }
+
+        try {
+          const response = await processarTAR(file);
+          setExtractedFiles(response.extracted_files);
+          console.log(response.extracted_files);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    };
+
+    fileInput.click();
+  };
+
   return (
     <Card className="bg-background/25">
       <CardHeader className="justify-between">
         <div className="flex gap-5">
-          <span className="rounded-md bg-green-500/20 px-2 py-0.5 text-xl font-bold text-green-400 hover:bg-green-900">
+          <span
+            onClick={handleFileUpload}
+            className="cursor-pointer rounded-md bg-green-500/20 px-2 py-0.5 text-xl font-bold text-green-400 hover:bg-green-900 active:scale-95 transition-transform duration-100"
+          >
             .TAR.GZ
           </span>
           <Chip
@@ -151,6 +228,18 @@ export default function PasoAPaso() {
             </DropdownTrigger>
             <DropdownMenu variant="flat" aria-label="Menu de opciones">
               <DropdownItem
+                key="nuevo"
+                onPress={handleFileUpload}
+                description="Cargar un nuevo archivo comprimido"
+                startContent={
+                  <AgregarArchivoIcon
+                    className={cn(iconClasses, "h-auto w-5")}
+                  />
+                }
+              >
+                Nuevo archivo
+              </DropdownItem>
+              <DropdownItem
                 key="informacion"
                 showDivider
                 description="Tamaño, tipo de archivo, fecha de creación, etc."
@@ -179,10 +268,9 @@ export default function PasoAPaso() {
       </CardHeader>
       <CardBody className="pt-0">
         <Table
-          isCompact
           fullWidth
           classNames={{
-            wrapper: "min-h-[715px]",
+            wrapper: "min-h-[700px]",
           }}
           aria-label="Tabla de archivos descomprimidos"
           bottomContent={
@@ -225,7 +313,9 @@ export default function PasoAPaso() {
             {(item) => (
               <TableRow key={item.key}>
                 {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
+                  <TableCell className="py-1">
+                    {renderCell(item, columnKey)}
+                  </TableCell>
                 )}
               </TableRow>
             )}

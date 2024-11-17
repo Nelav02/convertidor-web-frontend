@@ -140,3 +140,28 @@ export const validarJSON = async (jsonData) => {
     throw error;
   }
 };
+
+export const processarTAR = async (file) => {
+  if (!file) {
+    console.log("No se ha seleccionado un archivo.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post(`${API_URL}/procesarTAR/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error uploading file:",
+      error.response ? error.response.data : error.message
+    );
+    throw error;
+  }
+};

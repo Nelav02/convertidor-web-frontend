@@ -1,12 +1,10 @@
 const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "NAME", uid: "name", sortable: true },
-  { name: "AGE", uid: "age", sortable: true },
-  { name: "ROLE", uid: "role", sortable: true },
-  { name: "TEAM", uid: "team" },
-  { name: "EMAIL", uid: "email" },
-  { name: "STATUS", uid: "status", sortable: true },
-  { name: "ACTIONS", uid: "actions" },
+  { name: "ID", uid: "id", sortable: false },
+  { name: "NOMBRE", uid: "nombre", sortable: false },
+  { name: "CREACIÓN", uid: "creacion", sortable: false },
+  { name: "TAMAÑO", uid: "tamanio", sortable: false },
+  { name: "TIPO", uid: "tipo", sortable: false },
+  { name: "OPCIONES", uid: "opciones", sortable: false },
 ];
 
 const statusOptions = [
