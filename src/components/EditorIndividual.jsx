@@ -361,7 +361,7 @@ export default function EditorIndividual() {
               theme="vs-dark"
               options={{
                 minimap: { enabled: true },
-                fontSize: 14,
+                fontSize: 13,
                 scrollBeyondLastLine: false,
                 wordWrap: "on",
                 automaticLayout: true,
@@ -369,7 +369,7 @@ export default function EditorIndividual() {
             />
           </div>
         </CardBody>
-        <CardFooter className="">
+        <CardFooter>
           <Textarea
             isReadOnly
             label={
@@ -591,7 +591,7 @@ export default function EditorIndividual() {
               theme="vs-dark"
               options={{
                 minimap: { enabled: true },
-                fontSize: 14,
+                fontSize: 13,
                 scrollBeyondLastLine: false,
                 wordWrap: "on",
                 automaticLayout: true,
