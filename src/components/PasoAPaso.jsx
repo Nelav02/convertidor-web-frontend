@@ -38,7 +38,7 @@ import { DBIcon } from "../assets/DBIcon";
 import { MenuIcon } from "../assets/MenuIcon";
 import { InfoIcon } from "../assets/InfoIcon";
 import { EliminarDocumentoIcon } from "../assets/EliminarDocumentoIcon";
-import { processarTAR } from "../api/IndividualAPI";
+import { processarTAR, validarXML } from "../api/IndividualAPI";
 import { AgregarArchivoIcon } from "../assets/AgregarArchivoIcon";
 import { ArchivoIcon } from "../assets/ArchivoIcon";
 import { NotificacionIcon } from "../assets/NotificacionIcon";
@@ -50,10 +50,14 @@ import { VerificatorIcon } from "../assets/VerificatorIcon";
 export default function PasoAPaso() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [languajeEditor, setLanguajeEditor] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  //const [isLoading, setIsLoading] = useState(false);
   const [infoTAR, setInfoTAR] = useState(null);
   const [extractedFiles, setExtractedFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const [statusXML, setStatusXML] = useState("");
+  const [messageXML, setMessageXML] = useState("");
 
   const iconClasses =
     "text-xl text-default-500 pointer-events-none flex-shrink-0";
@@ -77,19 +81,36 @@ export default function PasoAPaso() {
     fileInput.onchange = async (event) => {
       const file = event.target.files[0];
       if (file) {
+        if (!file.name.endsWith(".tar.gz")) {
+          toast.error(
+            "Solo se aceptan archivos comprimidos con extensión .tar.gz"
+          );
+          return;
+        }
+
         if (file.size > 50 * 1024 * 1024) {
-          alert(`El archivo es demasiado grande. ${file.size} bytes`);
+          toast.error(`El archivo es demasiado grande. (Max 50MB)`);
           return;
         }
 
         setExtractedFiles([]);
+        setInfoTAR(null);
 
         try {
-          setIsLoading(true);
-          const response = await processarTAR(file);
-          setExtractedFiles(response.extracted_files);
-          setInfoTAR(response.tar_info);
-          setIsLoading(false);
+          toast.promise(processarTAR(file), {
+            loading: () => {
+              return "Descomprimiendo archivo ... ";
+            },
+            error: (response) => {
+              console.log(response);
+              return `Error al descomprimir el archivo. ${response.message}`;
+            },
+            success: (response) => {
+              setExtractedFiles(response.extracted_files);
+              setInfoTAR(response.tar_info);
+              return `Archivo ${file.name} descomprimido correctamente.`;
+            },
+          });
         } catch (error) {
           console.log(error);
         }
@@ -99,10 +120,94 @@ export default function PasoAPaso() {
     fileInput.click();
   };
 
+  const handleValidateXML = async (content) => {
+    try {
+      const response = await validarXML(
+        new File([content], { type: "text/xml" })
+      );
+
+      if (response.status.toLowerCase() === "valid") {
+        setStatusXML(response.status);
+        setMessageXML(response.message);
+      } else {
+        throw new Error("El estado del XML no es valido.");
+      }
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setStatusXML(error.response.data.status);
+        setMessageXML(error.response.data.message);
+      }
+      throw error;
+    }
+  };
+
+  const handleSaveInDB = async () => {
+    console.log("DB: ", extractedFiles);
+  };
+
   const handleModifyXML = (item) => {
     setSelectedFile(item.content);
+    setSelectedItem(item);
     setLanguajeEditor(item.type === "application/xml" ? "xml" : "plaintext");
+    if (item.type === "application/xml") {
+      handleValidateXML(item.content);
+    }
     onOpen();
+  };
+
+  const handleCloseModal = async () => {
+    try {
+      const response = await validarXML(
+        new File([selectedFile], { type: "text/xml" })
+      );
+
+      if (response.status.toLowerCase() === "valid") {
+        setStatusXML(response.status);
+        setMessageXML(response.message);
+
+        handleSaveContent();
+
+        setSelectedFile(null);
+        setSelectedItem(null);
+        setLanguajeEditor(null);
+        setStatusXML("");
+        setMessageXML("");
+        onClose();
+      } else {
+        toast.error("Debe ser un XML válido para cerrar el editor.");
+        throw new Error("El estado del XML no es valido.");
+      }
+    } catch (error) {
+      toast.error("Error al validar el archivo XML.");
+      if (error.response && error.response.data) {
+        setStatusXML(error.response.data.status);
+        setMessageXML(error.response.data.message);
+      }
+      throw error;
+    }
+  };
+
+  /*setSelectedFile(null);
+    setSelectedItem(null);
+    setLanguajeEditor(null);
+    setStatusXML("");
+    setMessageXML("");
+    onClose();*/
+
+  const handleDeleteXML = (item) => {
+    setExtractedFiles((prevFiles) =>
+      prevFiles.filter((file) => file.id !== item.id)
+    );
+
+    toast.error(`Archivo eliminado: ${item.filename}`);
+  };
+
+  const handleSaveContent = () => {
+    let item_selected = extractedFiles.filter(
+      (file) => file.id == selectedItem.id
+    );
+
+    item_selected[0].content = selectedFile;
   };
 
   function deleteContent() {
@@ -147,6 +252,9 @@ export default function PasoAPaso() {
               variant="flat"
               radius="sm"
               endContent={<DBIcon className="h-auto w-4" />}
+              onPress={() => {
+                handleSaveInDB();
+              }}
             >
               Guardar en DB
             </Button>
@@ -246,7 +354,7 @@ export default function PasoAPaso() {
               )}
             </TableHeader>
             <TableBody
-              isLoading={isLoading}
+              //isLoading={isLoading}
               loadingContent={
                 <Spinner size="lg" label="Procesando archivos ..." />
               }
@@ -354,6 +462,9 @@ export default function PasoAPaso() {
                         closeDelay={150}
                       >
                         <Button
+                          onPress={() => {
+                            handleDeleteXML(item);
+                          }}
                           isIconOnly
                           color="danger"
                           aria-label="Editar"
@@ -391,7 +502,7 @@ export default function PasoAPaso() {
         }}
       >
         <ModalContent>
-          {(onClose) => (
+          {() => (
             <>
               <ModalHeader className="flex justify-between gap-1">
                 <span className="rounded-md bg-blue-900 px-2 py-0.5 text-xl font-bold text-blue-500">
@@ -410,6 +521,9 @@ export default function PasoAPaso() {
                       size="sm"
                       variant="solid"
                       color="warning"
+                      onPress={() => {
+                        handleSaveContent();
+                      }}
                     >
                       <FileCodeIcon className="h-auto w-4" />
                     </Button>
@@ -423,6 +537,21 @@ export default function PasoAPaso() {
                   >
                     <Button
                       isIconOnly
+                      onPress={() => {
+                        if (selectedItem.type === "application/xml") {
+                          toast.promise(handleValidateXML(selectedFile), {
+                            error: (data) => {
+                              return `${data.response.data.message}`;
+                            },
+                            success: "XML validado exitosamente",
+                            loading: "Validando archivo XML ...",
+                          });
+                        } else {
+                          toast.success(
+                            "No es necesario validar este archivo."
+                          );
+                        }
+                      }}
                       size="sm"
                       variant="solid"
                       color="success"
@@ -442,7 +571,13 @@ export default function PasoAPaso() {
                       size="sm"
                       variant="solid"
                       color="danger"
-                      onPress={onClose}
+                      onPress={() => {
+                        if (selectedItem.type === "application/xml") {
+                          handleCloseModal();
+                        } else {
+                          onClose();
+                        }
+                      }}
                     >
                       <CerrarIcon className="h-auto w-3" />
                     </Button>
@@ -456,7 +591,9 @@ export default function PasoAPaso() {
                     width="53.5vw"
                     defaultLanguage={languajeEditor}
                     value={selectedFile}
-                    onChange={(value) => setSelectedFile(value || "")}
+                    onChange={(value) => {
+                      setSelectedFile(value);
+                    }}
                     theme="vs-dark"
                     options={{
                       minimap: { enabled: true },
@@ -471,11 +608,27 @@ export default function PasoAPaso() {
               <ModalFooter className="flex justify-center py-3">
                 <div className="w-full">
                   <Textarea
-                    fullWidth
                     isReadOnly
-                    label="Mensaje"
-                    value="Mensaje de validación del archivo XML actual"
-                    color="deafult"
+                    label={
+                      statusXML
+                        ? statusXML.toLowerCase() === "invalid"
+                          ? `${statusXML.toUpperCase()} (${infoTAR.filename})`
+                          : statusXML.toUpperCase()
+                        : "Mensaje"
+                    }
+                    value={
+                      messageXML
+                        ? messageXML
+                        : "Mensaje de validación del archivo XML actual"
+                    }
+                    color={
+                      statusXML
+                        ? statusXML === "invalid"
+                          ? "danger"
+                          : "success"
+                        : "default"
+                    }
+                    labelPlacement="inside"
                     size="lg"
                     radius="sm"
                     maxRows={1}

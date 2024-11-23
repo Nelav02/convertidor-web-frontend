@@ -71,12 +71,17 @@ export default function EditorIndividual() {
   const handleFileUpload = () => {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".xml,.DATA";
+    fileInput.accept = ".DATA";
     fileInput.onchange = async (event) => {
       const file = event.target.files[0];
       if (file) {
+        if (!file.name.endsWith(".DATA")) {
+          toast.error("Solo se aceptan archivos con extensión .DATA");
+          return;
+        }
+
         if (file.size > 5 * 1024 * 1024) {
-          alert(`El archivo es demasiado grande. ${file.size} bytes`);
+          toast.error(`El archivo es demasiado grande. ${file.size} bytes`);
           return;
         }
 

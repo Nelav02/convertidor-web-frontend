@@ -38,7 +38,7 @@ function App() {
               title={
                 <div className="flex items-center space-x-2">
                   <Individual_logo className="h-auto w-5" />
-                  <span>Individual</span>
+                  <span>Editor Individual</span>
                 </div>
               }
             >
@@ -62,7 +62,7 @@ function App() {
               title={
                 <div className="flex items-center space-x-2">
                   <Automatizacion_logo className="h-auto w-5" />
-                  <span>Automatizacion</span>
+                  <span>Reportes</span>
                 </div>
               }
             >

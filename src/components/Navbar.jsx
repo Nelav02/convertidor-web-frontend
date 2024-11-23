@@ -2,11 +2,11 @@ import {
   Navbar,
   NavbarBrand,
   NavbarContent,
-  NavbarItem,
-  Link,
-  Input,
+  //NavbarItem,
+  //Link,
+  //Input,
 } from "@nextui-org/react";
-import { SearchIcon } from "../assets/SearchIcon.jsx";
+//import { SearchIcon } from "../assets/SearchIcon.jsx";
 import { BOA_logo } from "../assets/BOA_logo.jsx";
 
 export default function NavbarPage() {
@@ -16,7 +16,7 @@ export default function NavbarPage() {
         <NavbarBrand className="mr-4">
           <BOA_logo className="h-auto w-36" />
         </NavbarBrand>
-        <NavbarContent className="hidden sm:flex gap-3">
+        {/*<NavbarContent className="hidden sm:flex gap-3">
           <NavbarItem isActive>
             <Link color="primary" href="#">
               Funcionalidad
@@ -42,7 +42,7 @@ export default function NavbarPage() {
           placeholder="Type to search..."
           startContent={<SearchIcon size={20} />}
           type="search"
-        />
+        />*/}
       </NavbarContent>
     </Navbar>
   );
