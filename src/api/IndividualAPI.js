@@ -165,3 +165,9 @@ export const processarTAR = async (file) => {
     throw error;
   }
 };
+
+export const enviarListaXML = async (fileList) => {
+  console.log(typeof fileList[1].size);
+  console.log("Enviando archivos: ", fileList);
+  return await axios.post(`${API_URL}/guardarListaArchivos/`, fileList);
+};

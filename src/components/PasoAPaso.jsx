@@ -36,9 +36,9 @@ import { columns } from "../utils/data";
 import { CheckIcon } from "../assets/CheckIcon";
 import { DBIcon } from "../assets/DBIcon";
 import { MenuIcon } from "../assets/MenuIcon";
-import { InfoIcon } from "../assets/InfoIcon";
+//import { InfoIcon } from "../assets/InfoIcon";
 import { EliminarDocumentoIcon } from "../assets/EliminarDocumentoIcon";
-import { processarTAR, validarXML } from "../api/IndividualAPI";
+import { enviarListaXML, processarTAR, validarXML } from "../api/IndividualAPI";
 import { AgregarArchivoIcon } from "../assets/AgregarArchivoIcon";
 import { ArchivoIcon } from "../assets/ArchivoIcon";
 import { NotificacionIcon } from "../assets/NotificacionIcon";
@@ -141,8 +141,17 @@ export default function PasoAPaso() {
     }
   };
 
-  const handleSaveInDB = async () => {
-    console.log("DB: ", extractedFiles);
+  const handleSaveInDB = () => {
+    toast.promise(enviarListaXML(extractedFiles), {
+      loading: "Esperando respuesta ...",
+      error: (error) => {
+        return `Error: ${error.message}`;
+      },
+      success: () => {
+        deleteContent();
+        return `Archivos guardados correctamente.`;
+      },
+    });
   };
 
   const handleModifyXML = (item) => {
@@ -277,7 +286,7 @@ export default function PasoAPaso() {
                 >
                   Nuevo archivo
                 </DropdownItem>
-                <DropdownItem
+                {/*<DropdownItem
                   key="informacion"
                   showDivider
                   description="Tamaño, tipo de archivo, fecha de creación, etc."
@@ -286,7 +295,7 @@ export default function PasoAPaso() {
                   }
                 >
                   Informacion del archivo
-                </DropdownItem>
+                </DropdownItem>*/}
                 <DropdownItem
                   key="limpiar"
                   className="text-danger"
