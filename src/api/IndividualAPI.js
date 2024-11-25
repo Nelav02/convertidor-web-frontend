@@ -167,7 +167,57 @@ export const processarTAR = async (file) => {
 };
 
 export const enviarListaXML = async (fileList) => {
-  console.log(typeof fileList[1].size);
-  console.log("Enviando archivos: ", fileList);
   return await axios.post(`${API_URL}/guardarListaArchivos/`, fileList);
+};
+
+export const getDatosAutomatizacion = async (skip = 0, limit = 5, signal) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/obtener_datos_automatizacion/`,
+      {
+        params: {
+          skip,
+          limit,
+        },
+        signal,
+      }
+    );
+
+    const data = response.data;
+
+    if (data.status !== "valid") {
+      throw new Error(data.message);
+    }
+
+    return data.data;
+  } catch (error) {
+    console.log("Error al obtener datos: ", error);
+    throw error;
+  }
+};
+
+export const getDatosIndividuales = async (skip = 0, limit = 5, signal) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/obtener_contenido_individual/`,
+      {
+        params: {
+          skip,
+          limit,
+        },
+        signal,
+      }
+    );
+
+    const data = response.data;
+
+    if (data.status !== "valid") {
+      throw new Error(data.message);
+    }
+
+    return data.data;
+  } catch (error) {
+    console.log("Error al obtener datos: ", error);
+    throw error;
+  }
 };

@@ -1,4 +1,4 @@
-import { Tabs, Tab, Card, CardBody } from "@nextui-org/react";
+import { Tabs, Tab } from "@nextui-org/react";
 
 import NavbarPage from "./components/Navbar";
 import EditorIndividual from "./components/EditorIndividual";
@@ -7,6 +7,8 @@ import { Automatizacion_logo } from "./assets/Automatizacion";
 import { Paso_a_paso_logo } from "./assets/Paso_a_paso_logo";
 import { Individual_logo } from "./assets/Individual_logo";
 import PasoAPaso from "./components/PasoAPaso";
+import PlantillaReportes from "./components/PlantillaReportes";
+import { ChartIcon } from "./assets/ChartIcon";
 
 function App() {
   return (
@@ -61,17 +63,12 @@ function App() {
               key={3}
               title={
                 <div className="flex items-center space-x-2">
-                  <Automatizacion_logo className="h-auto w-5" />
+                  <ChartIcon className="h-auto w-5" />
                   <span>Reportes</span>
                 </div>
               }
             >
-              <Card>
-                <CardBody>
-                  Excepteur sint occaecat cupidatat non proident, sunt in culpa
-                  qui officia deserunt mollit anim id est laborum.
-                </CardBody>
-              </Card>
+              <PlantillaReportes />
             </Tab>
           </Tabs>
         </div>
